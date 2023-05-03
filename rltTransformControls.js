@@ -9,6 +9,7 @@ import {
 	Line,
 	LineBasicMaterial,
 	Matrix4,
+	MathUtils,
 	Mesh,
 	MeshBasicMaterial,
 	Object3D,
@@ -110,7 +111,8 @@ class TransformControls extends Object3D {
 		defineProperty( 'axis', null );
 		defineProperty( 'mode', 'translate' );
 		defineProperty( 'translationSnap', null );
-		defineProperty( 'rotationSnap', null );
+		defineProperty( 'rotationSnap', MathUtils.degToRad( 90 ) );
+		defineProperty( 'rotationSnapThreshold', MathUtils.degToRad( 10 ) );
 		defineProperty( 'scaleSnap', null );
 		defineProperty( 'space', 'world' );
 		defineProperty( 'size', 1 );
