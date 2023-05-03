@@ -89,6 +89,8 @@
 				scene.add( control );
 
 				control.setMode( 'all' );
+				control.setRotationSnap(THREE.MathUtils.degToRad( 90 ))
+				control.setRotationSnapThreshold(THREE.MathUtils.degToRad( 10 ))
 
 				window.addEventListener( 'resize', onWindowResize );
 

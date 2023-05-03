@@ -528,8 +528,12 @@ class TransformControls extends Object3D {
 			}
 
 			// Apply rotation snap
-
-			if ( this.rotationSnap ) this.rotationAngle = Math.round( this.rotationAngle / this.rotationSnap ) * this.rotationSnap;
+			
+			if (this.rotationSnap) {
+				if (this.checkRotationSnapThreshold(this.rotationAngle, this.rotationSnap, this.rotationSnapThreshold)) {
+					this.rotationAngle = Math.round( this.rotationAngle / this.rotationSnap ) * this.rotationSnap
+				}
+			}
 
 			// Apply rotate
 			if ( space === 'local' && axis !== 'E' && axis !== 'XYZE' ) {
@@ -686,6 +690,12 @@ class TransformControls extends Object3D {
 
 	}
 
+	setRotationSnapThreshold( rotationSnapThreshold ) {
+
+		this.rotationSnapThreshold = rotationSnapThreshold;
+
+	}
+
 	setScaleSnap( scaleSnap ) {
 
 		this.scaleSnap = scaleSnap;
@@ -710,6 +720,13 @@ class TransformControls extends Object3D {
 
 	}
 
+	checkRotationSnapThreshold() {
+		if (!this.rotationSnapThreshold || this.rotationSnapThreshold > this.rotationSnap) {
+			return true
+		}
+		const modulo = Math.abs(this.rotationAngle) % this.rotationSnap
+		return modulo <= this.rotationSnapThreshold || this.rotationSnap - modulo <= this.rotationSnapThreshold
+	}
 }
 
 TransformControls.prototype.isTransformControls = true;
