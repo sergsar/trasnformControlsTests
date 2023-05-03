@@ -132,6 +132,7 @@ class TransformControls extends Object3D {
 		const rotationAxis = new Vector3();
 		const rotationAngle = 0;
 		const eye = new Vector3();
+		const eulerWorld = new Euler();
 
 		// TODO: remove properties unused in plane and gizmo
 
@@ -146,6 +147,7 @@ class TransformControls extends Object3D {
 		defineProperty( 'rotationAxis', rotationAxis );
 		defineProperty( 'rotationAngle', rotationAngle );
 		defineProperty( 'eye', eye );
+		defineProperty( 'eulerWorld', eulerWorld );
 
 		this._offset = new Vector3();
 		this._startNorm = new Vector3();
@@ -283,6 +285,7 @@ class TransformControls extends Object3D {
 
 				this.pointStart.copy( planeIntersect.point ).sub( this.worldPositionStart );
 
+				this.eulerWorld.setFromQuaternion(this.worldQuaternion);
 			}
 
 			this.dragging = true;
@@ -498,6 +501,8 @@ class TransformControls extends Object3D {
 
 			const ROTATION_SPEED = 20 / this.worldPosition.distanceTo( _tempVector.setFromMatrixPosition( this.camera.matrixWorld ) );
 
+			let angleStart = 0
+
 			if ( axis === 'E' ) {
 
 				this.rotationAxis.copy( this.eye );
@@ -526,13 +531,14 @@ class TransformControls extends Object3D {
 				}
 
 				this.rotationAngle = this._offset.dot( _tempVector.cross( this.eye ).normalize() ) * ROTATION_SPEED;
-
+				angleStart = this.eulerWorld[axis.toLowerCase()]
+				this.rotationAngle += angleStart
 			}
 
 			// Apply rotation snap
 			
 			if (this.rotationSnap) {
-				if (this._checkRotationSnapThreshold(this.rotationAngle, this.rotationSnap, this.rotationSnapThreshold)) {
+				if (this._checkRotationSnapThreshold()) {
 					this.rotationAngle = Math.round( this.rotationAngle / this.rotationSnap ) * this.rotationSnap
 				}
 			}
@@ -541,7 +547,7 @@ class TransformControls extends Object3D {
 			if ( space === 'local' && axis !== 'E' && axis !== 'XYZE' ) {
 
 				object.quaternion.copy( this._quaternionStart );
-				object.quaternion.multiply( _tempQuaternion.setFromAxisAngle( this.rotationAxis, this.rotationAngle ) ).normalize();
+				object.quaternion.multiply( _tempQuaternion.setFromAxisAngle( this.rotationAxis, this.rotationAngle - angleStart ) ).normalize();
 
 			} else {
 
