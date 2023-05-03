@@ -171,6 +171,8 @@ class TransformControls extends Object3D {
 		this._onPointerMove = onPointerMove.bind( this );
 		this._onPointerUp = onPointerUp.bind( this );
 
+		this._checkRotationSnapThreshold = checkRotationSnapThreshold.bind( this )
+
 		this.domElement.addEventListener( 'pointerdown', this._onPointerDown );
 		this.domElement.addEventListener( 'pointermove', this._onPointerHover );
 		this.domElement.addEventListener( 'pointerup', this._onPointerUp );
@@ -530,7 +532,7 @@ class TransformControls extends Object3D {
 			// Apply rotation snap
 			
 			if (this.rotationSnap) {
-				if (this.checkRotationSnapThreshold(this.rotationAngle, this.rotationSnap, this.rotationSnapThreshold)) {
+				if (this._checkRotationSnapThreshold(this.rotationAngle, this.rotationSnap, this.rotationSnapThreshold)) {
 					this.rotationAngle = Math.round( this.rotationAngle / this.rotationSnap ) * this.rotationSnap
 				}
 			}
@@ -719,14 +721,6 @@ class TransformControls extends Object3D {
 		console.warn( 'TransformControls: update function has no more functionality and therefore has been deprecated.' );
 
 	}
-
-	checkRotationSnapThreshold() {
-		if (!this.rotationSnapThreshold || this.rotationSnapThreshold > this.rotationSnap) {
-			return true
-		}
-		const modulo = Math.abs(this.rotationAngle) % this.rotationSnap
-		return modulo <= this.rotationSnapThreshold || this.rotationSnap - modulo <= this.rotationSnapThreshold
-	}
 }
 
 TransformControls.prototype.isTransformControls = true;
@@ -825,6 +819,14 @@ function intersectObjectWithRay( object, raycaster, includeInvisible ) {
 
 	return false;
 
+}
+
+function checkRotationSnapThreshold() {
+	if (!this.rotationSnapThreshold || this.rotationSnapThreshold > this.rotationSnap) {
+		return true
+	}
+	const modulo = Math.abs(this.rotationAngle) % this.rotationSnap
+	return modulo <= this.rotationSnapThreshold || this.rotationSnap - modulo <= this.rotationSnapThreshold
 }
 
 //
