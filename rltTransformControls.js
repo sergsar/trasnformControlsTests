@@ -532,7 +532,8 @@ class TransformControls extends Object3D {
 
 				}
 
-				this.rotationAngle = this._offset.dot( _tempVector.cross( this.eye ).normalize() ) * ROTATION_SPEED;
+				this.rotationAngle = getAxisAngle(this.pointStart, this.pointEnd, _tempVector)
+
 				angleStart = this.eulerWorld[axis.toLowerCase()]
 				this.rotationAngle += angleStart
 			}
@@ -835,6 +836,16 @@ function checkRotationSnapThreshold() {
 	}
 	const modulo = Math.abs(this.rotationAngle) % this.rotationSnap
 	return modulo <= this.rotationSnapThreshold || this.rotationSnap - modulo <= this.rotationSnapThreshold
+}
+
+function getAxisAngle(v1, v2, axis) {
+	const v1n = v1.clone().normalize()
+	const v2n = v2.clone().normalize()
+	const dot = v1n.dot(v2n)
+	const cross = v1n.clone().cross(v2)
+	const axisDot = axis.dot(cross)
+
+	return Math.acos(dot) * Math.sign(axisDot)
 }
 
 //
@@ -1782,8 +1793,24 @@ class TransformControlsPlane extends Mesh {
 
 					break;
 				case 'R':
+					switch ( allAxis ) {
+
+						case 'X':
+							_alignVector.copy( _v3 );
+							_dirVector.copy( _v1 );
+							break;
+						case 'Y':
+							_alignVector.copy( _v3 );
+							_dirVector.copy( _v2 );
+							break;
+						case 'Z':
+							_alignVector.copy( _v2 );
+							_dirVector.copy( _v3 );
+							break;
+					}
+
+					break;
 				default:
-					// special case for rotate
 					_dirVector.set( 0, 0, 0 );
 
 			}
