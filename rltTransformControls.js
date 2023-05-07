@@ -134,7 +134,7 @@ class TransformControls extends Object3D {
 		const rotationAxis = new Vector3();
 		const rotationAngle = 0;
 		const eye = new Vector3();
-		const eulerWorld = new Euler();
+		const snapDeltaAngle = 0
 
 		// TODO: remove properties unused in plane and gizmo
 
@@ -149,7 +149,7 @@ class TransformControls extends Object3D {
 		defineProperty( 'rotationAxis', rotationAxis );
 		defineProperty( 'rotationAngle', rotationAngle );
 		defineProperty( 'eye', eye );
-		defineProperty( 'eulerWorld', eulerWorld );
+		defineProperty( 'snapDeltaAngle', snapDeltaAngle );
 
 		this._offset = new Vector3();
 		this._startNorm = new Vector3();
@@ -176,6 +176,7 @@ class TransformControls extends Object3D {
 		this._onPointerUp = onPointerUp.bind( this );
 
 		this._checkRotationSnapThreshold = checkRotationSnapThreshold.bind( this )
+		this._getSnapDeltaAngle = getSnapDeltaAngle.bind( this )
 
 		this.domElement.addEventListener( 'pointerdown', this._onPointerDown );
 		this.domElement.addEventListener( 'pointermove', this._onPointerHover );
@@ -286,14 +287,13 @@ class TransformControls extends Object3D {
 				this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this._worldScaleStart );
 
 				this.pointStart.copy( planeIntersect.point ).sub( this.worldPositionStart );
-
-				this.eulerWorld.setFromQuaternion(this.worldQuaternion);
 			}
 
 			this.dragging = true;
 			_mouseDownEvent.mode = this.mode;
 			this.dispatchEvent( _mouseDownEvent );
 
+			this.snapDeltaAngle = this._getSnapDeltaAngle()
 		}
 
 	}
@@ -503,8 +503,6 @@ class TransformControls extends Object3D {
 
 			const ROTATION_SPEED = 20 / this.worldPosition.distanceTo( _tempVector.setFromMatrixPosition( this.camera.matrixWorld ) );
 
-			let angleStart = 0
-
 			if ( axis === 'E' ) {
 
 				this.rotationAxis.copy( this.eye );
@@ -533,24 +531,23 @@ class TransformControls extends Object3D {
 				}
 
 				this.rotationAngle = getAxisAngle(this.pointStart, this.pointEnd, _tempVector)
-
-				angleStart = this.eulerWorld[axis.toLowerCase()]
-				this.rotationAngle += angleStart
 			}
 
 			// Apply rotation snap
 			
 			if (this.rotationSnap) {
+				this.rotationAngle -= this.snapDeltaAngle
 				if (this._checkRotationSnapThreshold()) {
 					this.rotationAngle = Math.round( this.rotationAngle / this.rotationSnap ) * this.rotationSnap
 				}
+				this.rotationAngle += this.snapDeltaAngle
 			}
 
 			// Apply rotate
 			if ( space === 'local' && axis !== 'E' && axis !== 'XYZE' ) {
 
 				object.quaternion.copy( this._quaternionStart );
-				object.quaternion.multiply( _tempQuaternion.setFromAxisAngle( this.rotationAxis, this.rotationAngle - angleStart ) ).normalize();
+				object.quaternion.multiply( _tempQuaternion.setFromAxisAngle( this.rotationAxis, this.rotationAngle ) ).normalize();
 
 			} else {
 
@@ -580,7 +577,7 @@ class TransformControls extends Object3D {
 
 		this.dragging = false;
 		this.axis = null;
-
+		this.snapDeltaAngle = 0;
 	}
 
 	dispose() {
@@ -836,6 +833,36 @@ function checkRotationSnapThreshold() {
 	}
 	const modulo = Math.abs(this.rotationAngle) % this.rotationSnap
 	return modulo <= this.rotationSnapThreshold || this.rotationSnap - modulo <= this.rotationSnapThreshold
+}
+
+function getSnapDeltaAngle() {
+	let result = 0
+	if (['RX', 'RY', 'RZ'].includes(this.axis)) {
+		const upAxisInitial = _unit.Y
+
+		const rotationAxisKey = this.axis[1]
+		const rotationAxisInitial = _unit[rotationAxisKey]
+		const rotationAxis = rotationAxisInitial.clone().applyQuaternion(this.worldQuaternion).normalize()
+
+		const supportAxisKey = this.axis === 'RY' ? 'X' : 'Y'
+		const supportAxisInitial = _unit[supportAxisKey]
+		const supportAxis = supportAxisInitial.clone().applyQuaternion(this.worldQuaternion)
+
+		const zAxisInitial = _unit.Z
+
+		const snapDirection = rotationAxis.clone()
+
+		if (Math.abs(rotationAxis.dot(upAxisInitial)) >= 0.999) {
+			snapDirection.cross(zAxisInitial).normalize()
+		} else {
+			snapDirection.cross(upAxisInitial).normalize()
+		}
+
+		const factor = rotationAxis.dot(supportAxis.clone().cross(snapDirection)) < 0.001 ? -1 : 1
+		const dot = supportAxis.dot(snapDirection)
+		result = Math.acos(dot % 1) * factor
+	}
+	return result
 }
 
 function getAxisAngle(v1, v2, axis) {
